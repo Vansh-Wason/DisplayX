@@ -1,0 +1,20 @@
+# DisplayX
+
+> A lightweight, wallpaper-first Home screen for Android TV and Google TV, built on the cleanyourtv launcher (MIT).
+> Home measured 43 MB on a 1.8 GB TV. It has a frosted glass clock, a moving glass focus, a wallpaper mode,
+> Continue watching, and a balanced wallpaper slideshow. No network use unless the owner sets a weather location.
+> It installs beside the cleanyourtv launcher under its own app ID.
+
+## Docs
+
+- [README.md](README.md): features, build, install and permissions
+- [AGENTS.md](AGENTS.md): steps for coding agents, the tested-on table, settings keys, and what not to do
+- [theme/config.json](theme/config.json): the default theme
+- [source/displayx.patch](source/displayx.patch): the change against cleanyourtv commit 718f98c9
+
+## Facts
+
+- Platforms: Android TV and Google TV, minSdk 26. Tested on Google TV 14 (MediaTek), 1.8 GB and 2.4 GB RAM.
+- Permissions: `READ_MEDIA_IMAGES` (wallpapers), `READ_TV_LISTINGS` (Continue watching), `INTERNET` (Continue watching
+  poster images from the streaming apps' own addresses, and the opt-in weather), and an accessibility helper (only on TVs whose Home button skips the chosen Home).
+- Undo: `adb uninstall <app id>`.
