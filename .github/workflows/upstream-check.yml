@@ -1,0 +1,63 @@
+# Once a day: does DisplayX's change still apply to cleanyourtv's newest launcher, and do the tests and lint pass?
+# It only reports, in one issue. It never merges, pushes or publishes anything: a person reads upstream's changes
+# before DisplayX takes them.
+name: upstream check
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: displayx
+
+      - name: Fetch cleanyourtv's newest code
+        run: |
+          # Whole history without file contents: a 3-way apply fetches the base files it needs on demand.
+          git clone --filter=blob:none https://github.com/Gathin23/cleanyourtv.git upstream
+          echo "UPSTREAM_SHA=$(git -C upstream rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: Try the change on it
+        id: apply
+        run: |
+          cd upstream
+          if git apply --3way ../displayx/source/displayx.patch; then echo "result=applies" >> "$GITHUB_OUTPUT";
+          else echo "result=conflicts" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/setup-java@v4
+        if: steps.apply.outputs.result == 'applies'
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Unit tests and lint
+        id: build
+        if: steps.apply.outputs.result == 'applies'
+        run: |
+          cd upstream/launcher
+          if ./gradlew --no-daemon testReleaseUnitTest lintRelease assembleRelease -PlauncherApplicationId=tv.displayx.home -PlauncherAppLabel=DisplayX; then
+            echo "result=pass" >> "$GITHUB_OUTPUT"; else echo "result=fail" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Report in one issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPLY: ${{ steps.apply.outputs.result }}
+          BUILD: ${{ steps.build.outputs.result }}
+        run: |
+          cd displayx
+          title="Upstream check"
+          body="cleanyourtv at \`$UPSTREAM_SHA\`: the change **$APPLY**"
+          if [ "$APPLY" = "applies" ]; then body="$body; tests, lint and build: **$BUILD**."; else body="$body; the patch needs updating by hand."; fi
+          body="$body"$'\n\n'"Read upstream's launcher changes before taking them: https://github.com/Gathin23/cleanyourtv/commits/main/launcher"$'\n'"Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          if [ -n "$number" ]; then gh issue comment "$number" --body "$body"; else gh issue create --title "$title" --body "$body"; fi

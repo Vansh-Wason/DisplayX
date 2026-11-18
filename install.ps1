@@ -19,7 +19,6 @@ $cls = 'com.gathin.tvhome'   # the code's own package: class names don't change 
 $dir = "/sdcard/Android/data/$pkg/files"
 $config = Join-Path $here 'theme\config.json'
 if (-not (Test-Path $config)) { throw "No theme at $config" }
-$redirect = (Get-Content $config -Raw | ConvertFrom-Json).stock_home_redirect
 function Sh([string]$c) { & $Adb -s $Serial shell $c }
 
 & $Adb connect $Serial | Out-Null
@@ -30,7 +29,22 @@ Sh "pm grant $pkg android.permission.READ_TV_LISTINGS; pm grant $pkg android.per
 
 # First start creates the app's folder for the theme. The old display font is no longer used.
 Sh "am start -W -n $pkg/$cls.MainActivity" | Out-Null
-& $Adb -s $Serial push $config /data/local/tmp/po-config.json | Out-Null
+# Many TVs keep their own home for the Home button even after another app is made Home: Google TV, older Android TV
+# (tvlauncher) and brand launchers. Ask Android which app answers Home; if it isn't this one, the key helper sends Home on
+# to this one (stock_home_redirect), and that home stays enabled (on Google TV it owns the quick panel behind the gear).
+$theme = Get-Content $config -Raw | ConvertFrom-Json
+Sh "cmd package set-home-activity --user 0 $pkg/$cls.MainActivity" | Out-Null
+$answers = "$((Sh 'cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN') | Select-Object -Last 1)".Trim()
+$stock = ($answers -split '/')[0]
+if (-not $theme.stock_home_redirect -and $stock -and $stock -ne $pkg -and $stock -ne 'android') {
+    $theme | Add-Member -NotePropertyName stock_home_redirect -NotePropertyValue $stock -Force
+    Write-Host "Home button belongs to ${stock}: adding the redirect"
+}
+$redirect = $theme.stock_home_redirect
+$pushed = Join-Path $env:TEMP 'displayx-config.json'
+[IO.File]::WriteAllText($pushed, ($theme | ConvertTo-Json -Depth 8))   # theme\config.json itself is left as it is
+& $Adb -s $Serial push $pushed /data/local/tmp/po-config.json | Out-Null
+Remove-Item $pushed
 $rev = [guid]::NewGuid().ToString('N')
 Sh "cp /data/local/tmp/po-config.json $dir/config.json; rm -f $dir/hero_font.ttf; printf '%s' '$rev' > $dir/theme_revision; rm -f /data/local/tmp/po-config.json"
 Sh "am force-stop $pkg"
@@ -53,6 +67,7 @@ Sh 'am start -a android.settings.SETTINGS' | Out-Null
 Start-Sleep -Seconds 3
 Sh 'input keyevent KEYCODE_HOME'
 Start-Sleep -Seconds 6
-$front = (Sh 'dumpsys activity activities' | Select-String 'topResumedActivity' | Select-Object -First 1).Line.Trim()
+# Android 10 and later call the front app topResumedActivity; Android 8 and 9 call it mResumedActivity.
+$front = "$((Sh 'dumpsys activity activities' | Select-String 'topResumedActivity|mResumedActivity' | Select-Object -First 1).Line)".Trim()
 Write-Host "In front: $front"
 if ($front -notmatch $pkg) { throw 'The Home is not in front: press Home on the remote, then check again.' }

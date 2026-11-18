@@ -21,6 +21,7 @@ For a plain, minimal Home, cleanyourtv's own launcher is the better choice.
 |---|---|---|---|
 | TCL 55" Google TV (MediaTek) | 14 | 2.4 GB | 63–84 MB, all effects on |
 | Haier Google TV (MediaTek) | 14 | 1.8 GB | 43 MB plain tiles; 68 MB with a wallpaper slideshow |
+| Google TV 14 emulator (x86, fresh, no Google account) | 14 | 2 GB | 62–65 MB through 10,000 random key presses, no crash |
 
 Untested elsewhere. Say so to the person, and screenshot after installing (below).
 
@@ -31,7 +32,9 @@ Untested elsewhere. Say so to the person, and screenshot after installing (below
 2. **Build:** apply `source/displayx.patch` to cleanyourtv commit `718f98c9`. Then build with
    `./gradlew -p launcher testReleaseUnitTest assembleRelease -PlauncherApplicationId=<app id>`. The tests must pass.
 3. **Install:** `install.ps1 -Serial <tv ip>:<port> -Package <app id>`. It grants two permissions, pushes
-   `theme/config.json`, makes this Home the default, and keeps every other accessibility service on the list.
+   `theme/config.json`, makes this Home the default, and keeps every other accessibility service on the list. On
+   Google TV it adds `stock_home_redirect`, because Google TV keeps its own home for the Home button even when another
+   app holds the Home role.
 4. **Check:** confirm it's in front with `dumpsys activity activities | grep topResumedActivity`. Take a screenshot.
    Ask the person to press Home and the gear on the real remote: an injected key is not proof.
 5. **Close ADB:** finish as cleanyourtv's `PROMPT.md` says.
