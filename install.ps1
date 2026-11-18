@@ -12,7 +12,7 @@ param(
     [string]$Weather = '',                           # "lat,lon", e.g. 51.5,-0.1; empty = no weather, nothing online
     [ValidateSet('', 'yes', 'no')][string]$UpdateNotice = '',
     [string]$Package = 'tv.displayx.home',
-    [string]$Repo = 'displayx-tv/DisplayX',          # where releases come from
+    [string]$Repo = 'Vansh-Wason/DisplayX',          # where releases come from
     [string]$Adb = '',                               # adb to use; empty = on PATH, else Google's, downloaded once
     [switch]$Quiet                                   # no questions: use the options as given
 )
