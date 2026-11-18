@@ -1,7 +1,7 @@
 # DisplayX installer: one command from a Windows PC on the same Wi-Fi as the TV.
 #   powershell -ExecutionPolicy Bypass -File install.ps1 -Tv <tv ip>:<port>
 # On the TV first: Settings > System > About > press Build 7 times; then Developer options > Wireless debugging: on.
-# It asks four questions (wallpapers, name, weather, update notice); pass them as options to skip the questions.
+# Four optional choices (wallpapers, name, weather, update notes), each showing its cost; Enter keeps each off. Pass options or -Quiet to skip them.
 # Undo: adb uninstall tv.displayx.home (your TV's previous Home comes back).
 param(
     [Parameter(Mandatory = $true)][string]$Tv,       # the address under Wireless debugging, e.g. 192.168.1.50:41234
@@ -55,12 +55,67 @@ if (-not (Test-Path $apk)) {
     Invoke-WebRequest $asset.browser_download_url -OutFile $apk
 }
 
-# 4. Four questions.
-$Wallpapers = Ask 'Folder of photos to use as wallpapers (Enter = DisplayX''s own AMOLED set)' $Wallpapers
-$Name = Ask 'Your name for the greeting (Enter to skip)' $Name
-$Weather = Ask 'Weather in the greeting? Your city as lat,lon, e.g. 51.5,-0.1 (Enter = no weather, nothing goes online)' $Weather
+# 4. Four optional choices. Each says what it does and what it costs; Enter on the first keeps it off.
+function Choose([string]$title, [string[]]$options) {
+    if ($Quiet) { return 0 }
+    Write-Host "`n$title" -ForegroundColor White
+    $pick = 0
+    $interactive = $true
+    try { $null = [Console]::KeyAvailable } catch { $interactive = $false }
+    if (-not $interactive) {   # no live console (an editor's terminal): numbers instead of arrows
+        for ($i = 0; $i -lt $options.Count; $i++) { Write-Host "  $($i + 1). $($options[$i])" }
+        $n = Read-Host "Choose 1-$($options.Count) (Enter = 1)"
+        if ($n -match '^\d+$' -and [int]$n -ge 1 -and [int]$n -le $options.Count) { return [int]$n - 1 }
+        return 0
+    }
+    $top = [Console]::CursorTop
+    while ($true) {
+        [Console]::SetCursorPosition(0, $top)
+        for ($i = 0; $i -lt $options.Count; $i++) {
+            $line = $(if ($i -eq $pick) { ' > ' } else { '   ' }) + $options[$i]
+            Write-Host $line.PadRight([Console]::WindowWidth - 1) -ForegroundColor $(if ($i -eq $pick) { 'Cyan' } else { 'Gray' })
+        }
+        Write-Host '   (arrow keys, then Enter)'.PadRight([Console]::WindowWidth - 1) -ForegroundColor DarkGray
+        $k = [Console]::ReadKey($true).Key
+        if ($k -eq 'UpArrow') { $pick = ($pick + $options.Count - 1) % $options.Count }
+        elseif ($k -eq 'DownArrow') { $pick = ($pick + 1) % $options.Count }
+        elseif ($k -eq 'Enter') { return $pick }
+    }
+}
+
+if (-not $Wallpapers -and (Choose 'Wallpapers' @(
+        'DisplayX AMOLED set: 4 true-black pictures, nothing to set up',
+        'My own photos: pick a folder on this PC')) -eq 1) {
+    $Wallpapers = Ask 'Folder of photos' ''
+}
+
+if (-not $Name -and (Choose 'Name in the greeting' @(
+        'No name: "Good evening."',
+        'Add a name: "Good evening, Sam."  (stays on the TV only)')) -eq 1) {
+    $Name = Ask 'Name' ''
+}
+
+if (-not $Weather) {
+    $w = Choose 'Weather in the greeting  (without it, greetings follow the time of day)' @(
+        'Off: nothing goes online for weather',
+        'On, find my city automatically: this PC asks ipwho.is once; the TV then checks open-meteo.com hourly (a few KB)',
+        'On, I will type my city: looked up once on open-meteo.com; the TV then checks hourly (a few KB)')
+    try {
+        if ($w -eq 1) {
+            $at = Invoke-RestMethod 'https://ipwho.is/?fields=success,city,latitude,longitude'
+            if ($at.success) { $Weather = [string]::Format([cultureinfo]::InvariantCulture, '{0:0.0},{1:0.0}', $at.latitude, $at.longitude); Write-Host "  Found: $($at.city), rounded to about 10 km." }
+        } elseif ($w -eq 2) {
+            $city = Ask 'City' ''
+            $hit = (Invoke-RestMethod "https://geocoding-api.open-meteo.com/v1/search?count=1&name=$([uri]::EscapeDataString($city))").results | Select-Object -First 1
+            if ($hit) { $Weather = [string]::Format([cultureinfo]::InvariantCulture, '{0:0.0},{1:0.0}', $hit.latitude, $hit.longitude); Write-Host "  Found: $($hit.name), $($hit.country)." }
+        }
+    } catch { Write-Host '  Could not look that up; weather stays off. You can run the installer again later.' -ForegroundColor Yellow }
+}
+
 if (-not $UpdateNotice) {
-    $UpdateNotice = if ((Ask 'Show a note on the TV when a new DisplayX is out? (y/N)' $(if ($Quiet) { 'n' } else { '' })) -match '^y') { 'yes' } else { 'no' }
+    $UpdateNotice = if ((Choose 'Update notes' @(
+            'Off: never checks',
+            'On: once a day the TV asks GitHub if there is a newer DisplayX (about 2 KB) and says so in the greeting. It never installs anything by itself')) -eq 1) { 'yes' } else { 'no' }
 }
 
 # 5. Install.

@@ -30,8 +30,9 @@ On a Windows PC on the same Wi-Fi:
 powershell -ExecutionPolicy Bypass -File install.ps1 -Tv <address shown under Wireless debugging>
 ```
 
-It pairs, installs, adds the wallpapers and makes DisplayX your Home. It asks only four things:<br>
-**your photos** (or the AMOLED set) · **your name** · **your city for weather** · **update notes on the TV**.
+It pairs, installs, adds the wallpapers and makes DisplayX your Home. Then four optional choices, picked with the arrow keys,
+each showing what it costs. Press Enter four times and nothing extra goes online:<br>
+**wallpapers** (AMOLED set or your photos) · **a name** (or none) · **weather** (off, found automatically, or your city) · **update notes** (off or on).
 
 ↺ **Undo:** `adb uninstall tv.displayx.home`, and your old Home is back.
 
