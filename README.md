@@ -12,11 +12,11 @@
 
 ◆ **A new line every time you come Home.** It follows the hour, and the weather if you turn it on.
 
-<p align="center"><img src="docs/greetings.jpg" width="900" alt="Three greetings: One more episode, Sam? / Chilly tonight, Sam. Stay cosy. / Remote's all yours."></p>
+<p align="center"><img src="docs/greetings.jpg" width="900" alt="Three greetings on a real TV: Just one more. Sure. / It's late. I won't tell. / Nice night out. Nicer in here."></p>
 
 ◆ **Frosted glass clock.** Your wallpaper shows through the digits, which stay readable on any picture.
 
-<p align="center"><img src="docs/clock.jpg" width="600" alt="The glass clock over a photo of leaves, on a real TV"></p>
+<p align="center"><img src="docs/clock.jpg" width="600" alt="The glass clock over the Aurora wallpaper, on a real TV"></p>
 
 ◆ **Continue watching.** Resume your shows in one press. The focused one grows, the rest step back.
 
@@ -33,8 +33,8 @@ wakes it. The included wallpapers are true black, so OLED pixels switch off. Or 
 
 ◆ **Light.** 64 MB against Google TV home's ~176 MB. No ads, no tracking, no account.
 
-<sub>Glass, greetings and wallpapers: Google TV emulator. Clock, Continue watching and menus: a real TCL Google TV,
-posters blurred on purpose.</sub>
+<sub>Greetings, clock, Continue watching and menus: a real TCL Google TV. Glass motion and the wallpaper grid: Google TV emulator.
+Posters blurred on purpose.</sub>
 
 ## ▸ Install in one command
 
