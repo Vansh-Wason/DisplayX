@@ -98,13 +98,15 @@ index 00000000..21f6aff9
 +FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 +OTHER DEALINGS IN THE FONT SOFTWARE.
 diff --git a/launcher/app/build.gradle b/launcher/app/build.gradle
-index 023aecde..ce91ab3b 100644
+index 023aecde..9c482317 100644
 --- a/launcher/app/build.gradle
 +++ b/launcher/app/build.gradle
-@@ -13,6 +13,8 @@ android {
+@@ -12,7 +12,9 @@ android {
+         minSdk 26
          targetSdk 34
          versionCode 11
-         versionName '3.2'
+-        versionName '3.2'
++        versionName providers.gradleProperty('launcherVersionName').getOrElse('3.2')   // DisplayX builds pass their own
 +        // A public build's own name in the TV's app list (-PlauncherAppLabel=DisplayX); the default keeps "Home".
 +        manifestPlaceholders = [appLabel: providers.gradleProperty('launcherAppLabel').getOrElse('@string/app_name')]
      }
@@ -170,10 +172,10 @@ index 4cf0143b..ef7bf641 100644
          return !animations ? 1f : advancedEffects ? 1.12f : 1.10f;
      }
 diff --git a/launcher/app/src/main/java/com/gathin/tvhome/Config.java b/launcher/app/src/main/java/com/gathin/tvhome/Config.java
-index eaccada9..2c90b025 100644
+index eaccada9..5986d47a 100644
 --- a/launcher/app/src/main/java/com/gathin/tvhome/Config.java
 +++ b/launcher/app/src/main/java/com/gathin/tvhome/Config.java
-@@ -209,6 +209,72 @@ final class Config {
+@@ -209,6 +209,74 @@ final class Config {
      final List<RaceWeekend.Race> raceCalendar;
      /** Cinematic top shelf (config.xml, cinematic_home): the focused dock app's artwork behind a larger shelf. */
      final boolean cinematicHome;
@@ -208,6 +210,8 @@ index eaccada9..2c90b025 100644
 +    boolean wallpaperMode;
 +    /** "lat,lon" for the welcome line's weather (theme weather_location); empty: no weather and no network call. */
 +    String weatherLocation = "";
++    /** "owner/repo" whose newest GitHub release the welcome line mentions (theme update_repo, opt-in); empty: off. */
++    String updateRepo = "";
 +    /** The remote's Settings button clears the TV Settings task before opening it (theme settings_key_clear_task;
 +     *  upstream c0cc2cf4): on MediaTek boards Back from Settings then goes Home, not to Display & Sound. */
 +    boolean settingsKeyClearTask;
@@ -246,7 +250,7 @@ index eaccada9..2c90b025 100644
      /** The glow in the focused app's colour behind the dock (config.xml, ambient_glow); false keeps the background plain. */
      final boolean ambientGlow;
      /** The focus highlight in the focused app's colour on every tile (config.xml, app_glow), as cinematic_home does for the dock. */
-@@ -674,7 +740,7 @@ final class Config {
+@@ -674,7 +742,7 @@ final class Config {
          Festival festival = json == null ? Festival.NONE : Festival.parse(festivalName(json),
                  string(json, "festival_until", ""), string(json, "greeting", ""), string(json, "accent_color", ""));
  
@@ -255,7 +259,7 @@ index eaccada9..2c90b025 100644
                  packageMap(appBanners), panelService, panelAction, panelExtra, coocaaSources, inputAction, inputSources, inputUriScheme, Math.max(1, columns),
                  Math.max(0, rowsBelow), animations, advancedEffects, shamsi, greetingName, moduleCards, reducedMotion, bootToLiveTv,
                  openOnStartChoice, dockTitle, dockRow, topMenu, launcherSettingsButton, reorderButton, showNetworkPill, showInputsPill,
-@@ -689,6 +755,37 @@ final class Config {
+@@ -689,6 +757,38 @@ final class Config {
                  Math.max(0, Math.min(90, clockWallpaperDim)), clockGlow, glassStyle, singleRow && dockRow, dockBandAll, lunar, lunarOffset,
                  dateBelowClock, vpnPill, locale, powerOnHomeAlways, inputsConnectedOnly,
                  Math.max(0, Math.min(600, openOnStartNetworkWait)), iconOnlyVpn);
@@ -273,6 +277,7 @@ index eaccada9..2c90b025 100644
 +        cfg.glassClock = json != null && bool(json, "glass_clock", false);
 +        cfg.wallpaperMode = json != null && bool(json, "wallpaper_mode", false);
 +        cfg.weatherLocation = json == null ? "" : json.optString("weather_location", "");
++        cfg.updateRepo = json == null ? "" : json.optString("update_repo", "");
 +        cfg.settingsKeyClearTask = json != null && bool(json, "settings_key_clear_task", false);
 +        cfg.wallpaperStretch = json != null && "stretch".equals(json.optString("wallpaper_fit"));
 +        cfg.tileGlowRing = json == null || bool(json, "tile_glow_ring", true);
@@ -464,10 +469,10 @@ index 00000000..74135eee
 +}
 diff --git a/launcher/app/src/main/java/com/gathin/tvhome/GtvHome.java b/launcher/app/src/main/java/com/gathin/tvhome/GtvHome.java
 new file mode 100644
-index 00000000..bb16a37e
+index 00000000..434121fe
 --- /dev/null
 +++ b/launcher/app/src/main/java/com/gathin/tvhome/GtvHome.java
-@@ -0,0 +1,1496 @@
+@@ -0,0 +1,1502 @@
 +package com.gathin.tvhome;
 +
 +import android.animation.ArgbEvaluator;
@@ -1089,6 +1094,11 @@ index 00000000..bb16a37e
 +    }
 +
 +    private void newWelcome() {
++        String update = cfg.updateRepo.isEmpty() ? null : UpdateNotice.available(act);
++        if (update != null && random.nextInt(3) == 0) {   // now and then, not every time
++            welcome.setText("DisplayX " + update + " is out. Run the installer to update.");
++            return;
++        }
 +        welcome.setText(welcomeLine(HomeWeather.cached(act), cfg.greetingName, random));
 +    }
 +
@@ -1324,6 +1334,7 @@ index 00000000..bb16a37e
 +        worker.execute(() -> {
 +            boolean firstWeather = HomeWeather.cached(act) == null;
 +            if (HomeWeather.due(act)) HomeWeather.refresh(act, cfg.weatherLocation);
++            if (!cfg.updateRepo.isEmpty() && UpdateNotice.due(act)) UpdateNotice.check(act, cfg.updateRepo);
 +            if (firstWeather && HomeWeather.cached(act) != null) main.post(this::newWelcome);
 +            List<WatchPanel.Item> read = WatchPanel.read(act, MAX_WATCH, cfg.watchApps);
 +            Map<String, Bitmap> loaded = new HashMap<>();
@@ -4079,6 +4090,105 @@ index 00000000..5a585168
 +        for (int i = 1; i < 12; i++) if (weight[i] > weight[best]) best = i;
 +        if (weight[best] < 2f) return Color.WHITE;
 +        return Color.HSVToColor(new float[] {best * 30f + 15f, 0.7f, 1f});
++    }
++}
+diff --git a/launcher/app/src/main/java/com/gathin/tvhome/UpdateNotice.java b/launcher/app/src/main/java/com/gathin/tvhome/UpdateNotice.java
+new file mode 100644
+index 00000000..f76e28db
+--- /dev/null
++++ b/launcher/app/src/main/java/com/gathin/tvhome/UpdateNotice.java
+@@ -0,0 +1,93 @@
++package com.gathin.tvhome;
++
++import android.content.Context;
++import android.content.SharedPreferences;
++import android.content.pm.PackageManager;
++
++import org.json.JSONObject;
++
++import java.io.ByteArrayOutputStream;
++import java.io.InputStream;
++import java.net.HttpURLConnection;
++import java.net.URL;
++
++/**
++ * update_repo (theme, opt-in at install): once a day, asks GitHub for the newest release of that repository. When it
++ * is newer than this build, the welcome line sometimes says so. It never downloads or installs anything: the owner
++ * runs the installer again. Without update_repo it makes no network call at all.
++ */
++final class UpdateNotice {
++    private static final long CHECK_EVERY_MS = 24L * 60 * 60 * 1000;
++
++    private UpdateNotice() {}
++
++    private static SharedPreferences prefs(Context context) {
++        return context.getSharedPreferences("update_notice", Context.MODE_PRIVATE);
++    }
++
++    static boolean due(Context context) {
++        return System.currentTimeMillis() - prefs(context).getLong("at", 0) > CHECK_EVERY_MS;
++    }
++
++    /** Off the main thread. "owner/name" only: anything else is ignored. */
++    static void check(Context context, String repo) {
++        if (repo == null || !repo.matches("[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")) return;
++        try {
++            HttpURLConnection con = (HttpURLConnection) new URL("https://api.github.com/repos/" + repo + "/releases/latest").openConnection();
++            con.setConnectTimeout(8000);
++            con.setReadTimeout(8000);
++            con.setRequestProperty("Accept", "application/vnd.github+json");
++            String body;
++            try (InputStream in = con.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
++                byte[] buf = new byte[4096];
++                int n;
++                while ((n = in.read(buf)) > 0 && out.size() < 256 * 1024) out.write(buf, 0, n);
++                body = out.toString("UTF-8");
++            } finally {
++                con.disconnect();
++            }
++            String tag = new JSONObject(body).optString("tag_name", "");
++            prefs(context).edit().putString("latest", tag).putLong("at", System.currentTimeMillis()).apply();
++        } catch (Exception offline) {
++            prefs(context).edit().putLong("at", System.currentTimeMillis()).apply();   // try again tomorrow
++        }
++    }
++
++    /** The newer release's tag, or null when this build is current or nothing is known. Safe on the main thread. */
++    static String available(Context context) {
++        String latest = prefs(context).getString("latest", "");
++        try {
++            String mine = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
++            return isNewer(latest, mine) ? latest : null;
++        } catch (PackageManager.NameNotFoundException never) {
++            return null;
++        }
++    }
++
++    /** "v1.10" is newer than "1.9"; equal, older, empty or unreadable is not. */
++    static boolean isNewer(String latest, String mine) {
++        int[] a = parts(latest), b = parts(mine);
++        if (a.length == 0 || b.length == 0) return false;
++        for (int i = 0; i < Math.max(a.length, b.length); i++) {
++            int x = i < a.length ? a[i] : 0, y = i < b.length ? b[i] : 0;
++            if (x != y) return x > y;
++        }
++        return false;
++    }
++
++    private static int[] parts(String version) {
++        if (version == null) return new int[0];
++        String v = version.trim().replaceFirst("^[vV]", "");
++        if (!v.matches("\\d+(\\.\\d+)*")) return new int[0];
++        String[] p = v.split("\\.");
++        int[] out = new int[p.length];
++        for (int i = 0; i < p.length; i++) {
++            try {
++                out[i] = Integer.parseInt(p[i]);
++            } catch (NumberFormatException tooBig) {
++                return new int[0];
++            }
++        }
++        return out;
 +    }
 +}
 diff --git a/launcher/app/src/main/java/com/gathin/tvhome/WallpaperBalance.java b/launcher/app/src/main/java/com/gathin/tvhome/WallpaperBalance.java
@@ -15718,6 +15828,41 @@ index adbb30db..15efebc4 100644
      <string name="font_regular" translatable="false">@font/outfit_regular</string>
      <string name="font_light" translatable="false">@font/outfit_light</string>
      <string name="font_extralight" translatable="false">@font/outfit_extralight</string>
+diff --git a/launcher/app/src/test/java/com/gathin/tvhome/UpdateNoticeTest.java b/launcher/app/src/test/java/com/gathin/tvhome/UpdateNoticeTest.java
+new file mode 100644
+index 00000000..47a7c31d
+--- /dev/null
++++ b/launcher/app/src/test/java/com/gathin/tvhome/UpdateNoticeTest.java
+@@ -0,0 +1,29 @@
++package com.gathin.tvhome;
++
++import static org.junit.Assert.assertFalse;
++import static org.junit.Assert.assertTrue;
++
++import org.junit.Test;
++
++public class UpdateNoticeTest {
++
++    @Test
++    public void aHigherReleaseIsNewer() {
++        assertTrue(UpdateNotice.isNewer("v1.1", "1.0"));
++        assertTrue(UpdateNotice.isNewer("v1.10", "1.9"));     // numbers, not text
++        assertTrue(UpdateNotice.isNewer("2", "1.9.9"));
++        assertTrue(UpdateNotice.isNewer("V1.0.1", "1.0"));
++    }
++
++    @Test
++    public void theSameOlderOrUnreadableIsNot() {
++        assertFalse(UpdateNotice.isNewer("v1.0", "1.0"));
++        assertFalse(UpdateNotice.isNewer("1.0.0", "1.0"));
++        assertFalse(UpdateNotice.isNewer("v0.9", "1.0"));
++        assertFalse(UpdateNotice.isNewer("", "1.0"));
++        assertFalse(UpdateNotice.isNewer("nightly", "1.0"));
++        assertFalse(UpdateNotice.isNewer("v1.1-beta", "1.0"));
++        assertFalse(UpdateNotice.isNewer(null, "1.0"));
++        assertFalse(UpdateNotice.isNewer("v99999999999", "1.0"));
++    }
++}
 diff --git a/launcher/app/src/test/java/com/gathin/tvhome/WallpaperBalanceTest.java b/launcher/app/src/test/java/com/gathin/tvhome/WallpaperBalanceTest.java
 new file mode 100644
 index 00000000..e9004842

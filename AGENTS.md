@@ -31,7 +31,7 @@ Untested elsewhere. Say so to the person, and screenshot after installing (below
    nothing about that, and adds no extra disabling steps.
 2. **Build:** apply `source/displayx.patch` to cleanyourtv commit `718f98c9`. Then build with
    `./gradlew -p launcher testReleaseUnitTest assembleRelease -PlauncherApplicationId=<app id>`. The tests must pass.
-3. **Install:** `install.ps1 -Serial <tv ip>:<port> -Package <app id>`. It grants two permissions, pushes
+3. **Install:** `install.ps1 -Tv <tv ip>:<port> -Quiet [-Wallpapers <folder>] [-Name <name>] [-Weather <lat,lon>] [-UpdateNotice yes|no]`. Ask the person for each answer first; never guess. It grants two permissions, pushes
    `theme/config.json`, makes this Home the default, and keeps every other accessibility service on the list. On
    Google TV it adds `stock_home_redirect`, because Google TV keeps its own home for the Home button even when another
    app holds the Home role.
@@ -53,6 +53,7 @@ Change these in `theme/config.json`, then run the installer again:
 | `weather_location` | unset | `"lat,lon"`: weather in the greeting from open-meteo.com. Unset means no network at all |
 | `settings_key_clear_task` | false | On MediaTek TVs, Back from Settings returns Home |
 | `greeting_name` | unset | A name in the greeting. Ask the person; never guess |
+| `update_repo` | unset | `"owner/repo"`: once a day the greeting may mention a newer GitHub release. It never downloads anything. Opt-in only |
 
 The rest of the keys are cleanyourtv's (`themes/README.md` there).
 
