@@ -12,11 +12,11 @@
 
 ◆ **A new line every time you come Home.** It follows the hour, and the weather if you turn it on.
 
-<p align="center"><img src="docs/greetings.jpg" width="900" alt="Three greetings on a real TV: Just one more. Sure. / It's late. I won't tell. / Nice night out. Nicer in here."></p>
+<p align="center"><img src="docs/greetings.jpg" width="900" alt="Three greetings on a real TV: Tomorrow can wait. / Nice night out. Nicer in here. / Nice to have you back."></p>
 
 ◆ **Frosted glass clock.** Your wallpaper shows through the digits, which stay readable on any picture.
 
-<p align="center"><img src="docs/clock.jpg" width="600" alt="The glass clock over the Aurora wallpaper, on a real TV"></p>
+<p align="center"><img src="docs/clock.jpg" width="600" alt="The glass clock over the Leaves photo, on a real TV"></p>
 
 ◆ **Continue watching.** Resume your shows in one press. The focused one grows, the rest step back.
 
@@ -26,15 +26,14 @@
 
 <p align="center"><img src="docs/hover.jpg" width="600" alt="The Wi-Fi menu over the glass top bar, on a real TV"></p>
 
-◆ **Wallpaper mode and AMOLED wallpapers.** After 5 s idle only the picture and the time remain; the next press just
-wakes it. The included wallpapers are true black, so OLED pixels switch off. Or bring your own photos.
+◆ **Wallpaper mode, four photos included.** After 5 s idle only the picture and the time remain; the next press just
+wakes it. Four photos come with it, or bring your own.
 
-<p align="center"><img src="docs/scenes.jpg" width="900" alt="The bundled AMOLED wallpapers"></p>
+<p align="center"><img src="docs/scenes.jpg" width="900" alt="Wallpaper mode on a real TV with the four included photos: Leaves, Mist, Horizon, Ribbon"></p>
 
 ◆ **Light.** 64 MB against Google TV home's ~176 MB. No ads, no tracking, no account.
 
-<sub>Greetings, clock, Continue watching and menus: a real TCL Google TV. Glass motion and the wallpaper grid: Google TV emulator.
-Posters blurred on purpose.</sub>
+<sub>Real TCL Google TV, except the glass motion (Google TV emulator). Posters blurred on purpose.</sub>
 
 ## ▸ Install in one command
 
@@ -47,7 +46,7 @@ powershell -ExecutionPolicy Bypass -File install.ps1 -Tv <address shown under Wi
 
 It pairs, installs, adds the wallpapers and makes DisplayX your Home. Then four optional choices, picked with the arrow keys,
 each showing what it costs. Press Enter four times and nothing extra goes online:<br>
-**wallpapers** (AMOLED set or your photos) · **a name** (or none) · **weather** (off, found automatically, or your city) · **update notes** (off or on).
+**wallpapers** (the four photos or yours) · **a name** (or none) · **weather** (off, found automatically, or your city) · **update notes** (off or on).
 
 <p align="center"><img src="docs/installer.png" width="900" alt="The installer's four choices in a PowerShell window"></p>
 
@@ -88,9 +87,22 @@ each showing what it costs. Press Enter four times and nothing extra goes online
 **Settings** live in `theme/config.json`. [AGENTS.md](AGENTS.md) lists every key.
 </details>
 
+## § Legal
+
 <sub><b>No affiliation.</b> DisplayX is an independent open-source project. It is not affiliated with, endorsed by or
-sponsored by Google, TCL, Haier, any TV maker, any streaming service or any studio. App icons, show titles and
-artwork that appear in screenshots belong to their owners and are shown only to illustrate how the Home displays
-your own apps and shows; DisplayX promotes no show, app or wallpaper. Built on
-<a href="https://github.com/Gathin23/cleanyourtv">cleanyourtv</a> (MIT). The bundled AMOLED wallpapers are drawn in
-code and released under MIT. The leaves photo in the real-TV shots is used under the Unsplash licence. Inter font: SIL OFL.</sub>
+sponsored by Google, TCL, Haier, any TV maker, any streaming service, studio or photographer. Android, Google TV and all
+other product names, logos, app icons, show titles and artwork that appear in screenshots are trademarks or copyright
+of their respective owners. They are shown only to illustrate how the Home displays your own apps and shows (nominative
+use); DisplayX promotes no show, app or brand.</sub>
+
+<sub><b>Wallpapers.</b> The four included photos were downloaded from free stock-photo sites whose licences allow free
+commercial use. Copyright stays with their photographers. They are not covered by this project's MIT licence and are not
+sold; they are shipped only as optional wallpapers. Any resemblance to a film, game or character is not a claim of
+connection to it.</sub>
+
+<sub><b>Takedown.</b> If you own anything shown or included here and want it credited or removed, open an issue and it
+will be handled promptly.</sub>
+
+<sub><b>No warranty.</b> The code is MIT-licensed and provided "as is", without warranty of any kind. You install it on
+your own TV at your own risk. Built on <a href="https://github.com/Gathin23/cleanyourtv">cleanyourtv</a> (MIT). Inter
+font: SIL OFL.</sub>

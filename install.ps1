@@ -7,7 +7,7 @@ param(
     [Parameter(Mandatory = $true)][string]$Tv,       # the address under Wireless debugging, e.g. 192.168.1.50:41234
     [string]$PairCode = '',                          # from Wireless debugging > Pair device with pairing code
     [string]$PairAt = '',                            # the address shown on that pairing screen
-    [string]$Wallpapers = '',                        # a folder of your photos; empty = DisplayX's AMOLED set
+    [string]$Wallpapers = '',                        # a folder of your photos; empty = DisplayX's photo set
     [string]$Name = '',
     [string]$Weather = '',                           # "lat,lon", e.g. 51.5,-0.1; empty = no weather, nothing online
     [ValidateSet('', 'yes', 'no')][string]$UpdateNotice = '',
@@ -32,7 +32,13 @@ if (-not (Test-Path $Adb)) {
     Expand-Archive $zip (Join-Path $here 'tools') -Force
     Remove-Item $zip
 }
-function Sh([string]$c) { & $Adb -s $Tv shell $c }
+# adb writes progress and harmless warnings on stderr, which 'Stop' would treat as failures when output is captured.
+function Sh([string]$c) { $ErrorActionPreference = 'Continue'; & $Adb -s $Tv shell $c }
+function Push([string]$from, [string]$to) {
+    $ErrorActionPreference = 'Continue'
+    & $Adb -s $Tv push $from $to 2>&1 | Out-Null
+    if ($LASTEXITCODE) { throw "Could not copy $from to the TV." }
+}
 
 # 2. Connect, pairing first if this PC has never paired with the TV.
 Step "Connecting to $Tv"
@@ -84,7 +90,7 @@ function Choose([string]$title, [string[]]$options) {
 }
 
 if (-not $Wallpapers -and (Choose 'Wallpapers' @(
-        'DisplayX AMOLED set: 4 true-black pictures, nothing to set up',
+        'DisplayX set: 4 photos, nothing to set up',
         'My own photos: pick a folder on this PC')) -eq 1) {
     $Wallpapers = Ask 'Folder of photos' ''
 }
@@ -127,10 +133,10 @@ Sh "am start -W -n $Package/$cls.MainActivity" | Out-Null
 # 6. Wallpapers into the TV's Pictures/TV_Wallpapers.
 Step 'Adding wallpapers'
 $pics = if ($Wallpapers) { Get-ChildItem $Wallpapers -File -Recurse | Where-Object { $_.Extension -match '^\.(jpe?g|png|webp)$' } }
-        else { Get-ChildItem (Join-Path $here 'wallpapers') -File }
+        else { Get-ChildItem (Join-Path $here 'wallpapers') -File | Where-Object { $_.Extension -match '^\.(jpe?g|png|webp)$' } }
 Sh 'mkdir -p /sdcard/Pictures/TV_Wallpapers'
 foreach ($p in $pics) {
-    & $Adb -s $Tv push $p.FullName "/sdcard/Pictures/TV_Wallpapers/$($p.Name)" | Out-Null
+    Push $p.FullName "/sdcard/Pictures/TV_Wallpapers/$($p.Name)"
     Sh "am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d 'file:///sdcard/Pictures/TV_Wallpapers/$($p.Name)'" | Out-Null
 }
 
@@ -149,7 +155,7 @@ if (-not $theme.stock_home_redirect -and $stock -and $stock -ne $Package -and $s
 $tmp = Join-Path $env:TEMP 'displayx-config.json'
 [IO.File]::WriteAllText($tmp, ($theme | ConvertTo-Json -Depth 8))
 $dir = "/sdcard/Android/data/$Package/files"
-& $Adb -s $Tv push $tmp /data/local/tmp/dx.json | Out-Null
+Push $tmp /data/local/tmp/dx.json
 Remove-Item $tmp
 Sh "cp /data/local/tmp/dx.json $dir/config.json; printf '%s' '$([guid]::NewGuid().ToString('N'))' > $dir/theme_revision; rm -f /data/local/tmp/dx.json"
 Sh "am force-stop $Package"
