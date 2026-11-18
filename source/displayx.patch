@@ -2782,10 +2782,10 @@ index 00000000..3d7ad1f9
 +}
 diff --git a/launcher/app/src/main/java/com/gathin/tvhome/LiquidFocus.java b/launcher/app/src/main/java/com/gathin/tvhome/LiquidFocus.java
 new file mode 100644
-index 00000000..552367f8
+index 00000000..a618359a
 --- /dev/null
 +++ b/launcher/app/src/main/java/com/gathin/tvhome/LiquidFocus.java
-@@ -0,0 +1,174 @@
+@@ -0,0 +1,177 @@
 +package com.gathin.tvhome;
 +
 +import android.content.Context;
@@ -2850,8 +2850,11 @@ index 00000000..552367f8
 +        glint.setStrokeCap(Paint.Cap.ROUND);
 +        glint.setColor(0xFFFFFFFF);
 +        root.addView(this, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-+        // A row scrolling its tile along, or a tile growing on focus, moves the lens with it.
++        // A row scrolling its tile along, or a tile growing on focus, moves the lens with it. A tile's new size lands in
++        // the layout pass after its animation's last frame, so a finished layout redraws the lens too, or it would rest
++        // at the tile's old size and place.
 +        root.getViewTreeObserver().addOnScrollChangedListener(this::invalidate);
++        root.getViewTreeObserver().addOnGlobalLayoutListener(this::invalidate);
 +    }
 +
 +    void moved(View focus) {
