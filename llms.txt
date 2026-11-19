@@ -14,7 +14,8 @@
 
 ## Facts
 
-- Platforms: Android TV and Google TV, minSdk 26. Tested on Google TV 14 (MediaTek), 1.8 GB and 2.4 GB RAM.
-- Permissions: `READ_MEDIA_IMAGES` (wallpapers), `READ_TV_LISTINGS` (Continue watching), `INTERNET` (Continue watching
+- Platforms: Android TV and Google TV, minSdk 26. Tested on Google TV 14 (MediaTek, 1.8 and 2.4 GB RAM), Android TV 11 (OnePlus, 2 GB) and an Android TV 8 emulator.
+- Install: `install.ps1` (Windows) or `install.sh` (macOS, Linux).
+- Permissions: `READ_MEDIA_IMAGES` or, on Android 8-12, `READ_EXTERNAL_STORAGE` (wallpapers), `READ_TV_LISTINGS` (Continue watching), `INTERNET` (Continue watching
   poster images from the streaming apps' own addresses, and the opt-in weather), and an accessibility helper (only on TVs whose Home button skips the chosen Home).
 - Undo: `adb uninstall <app id>`.

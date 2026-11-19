@@ -1,3 +1,4 @@
 *.patch -text
 *.png binary
 *.jpg binary
+*.sh text eol=lf

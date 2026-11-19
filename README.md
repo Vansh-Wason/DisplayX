@@ -38,11 +38,19 @@ wakes it. Four photos come with it, or bring your own.
 ## ▸ Install in one command
 
 On the TV: **Settings › System › About**, press **Build** 7 times, then **Developer options › Wireless debugging › On**.<br>
-On a Windows PC on the same Wi-Fi:
+On a computer on the same Wi-Fi, in the DisplayX folder. Windows (PowerShell):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File install.ps1 -Tv <address shown under Wireless debugging>
 ```
+
+macOS or Linux (Terminal):
+
+```bash
+bash install.sh <address shown under Wireless debugging>
+```
+
+<sub>On a Mac, if it says "No route to host": System Settings › Privacy & Security › Local Network › turn on your terminal app.</sub>
 
 It pairs, installs, adds the wallpapers and makes DisplayX your Home. Then four optional choices, picked with the arrow keys,
 each showing what it costs. Press Enter four times and nothing extra goes online:<br>
@@ -62,14 +70,14 @@ each showing what it costs. Press Enter four times and nothing extra goes online
 | **DisplayX** | **64 MB** | Your pictures, glass, Continue watching |
 | cleanyourtv default | 29 MB | Minimal grid |
 
-<sub>Same Google TV 14 emulator, same apps. On real TVs DisplayX measured 43 MB (1.8 GB Haier) and 63–84 MB (2.4 GB TCL).</sub>
+<sub>Same Google TV 14 emulator, same apps. On real TVs DisplayX measured 43 MB (1.8 GB Haier), 63–84 MB (2.4 GB TCL) and 79–99 MB (2 GB OnePlus 55Q1, Android 11, in a user's field test).</sub>
 
 ## ✓ Safe by design
 
 ✓ **No account, no ads, no tracking.** It goes online only for poster images and, if you ask, the weather.<br>
 ✓ **Installs beside your TV's own Home.** Nothing is deleted, and it's undone in one command.<br>
 ✓ **Keeps your accessibility services.** TalkBack and others stay on.<br>
-✓ **Tested.** 10,000 random remote presses with no crash, 309 unit tests, and lint with 0 errors.
+✓ **Tested.** 10,000 random remote presses with no crash, 313 unit tests, and lint with 0 errors.
 
 <details><summary><b>Permissions, build from source, settings</b></summary>
 
@@ -85,6 +93,8 @@ each showing what it costs. Press Enter four times and nothing extra goes online
 3. Put the APK at `apk/displayx.apk`; the installer uses it instead of downloading.
 
 **Settings** live in `theme/config.json`. [AGENTS.md](AGENTS.md) lists every key.
+
+**A grey box behind the clock?** Some MediaTek TVs draw the big text shadows as a box. Set `"text_shadows": false`; over bright, busy photos also set `"glass_clock": false`, since the glass clock relies on its dark halo.
 </details>
 
 ## § Legal

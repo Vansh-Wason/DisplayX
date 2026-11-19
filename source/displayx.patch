@@ -98,14 +98,16 @@ index 00000000..21f6aff9
 +FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 +OTHER DEALINGS IN THE FONT SOFTWARE.
 diff --git a/launcher/app/build.gradle b/launcher/app/build.gradle
-index 023aecde..9c482317 100644
+index 023aecde..bd575e01 100644
 --- a/launcher/app/build.gradle
 +++ b/launcher/app/build.gradle
-@@ -12,7 +12,9 @@ android {
+@@ -11,8 +11,10 @@ android {
+         applicationId providers.gradleProperty('launcherApplicationId').getOrElse('com.gathin.tvhome')
          minSdk 26
          targetSdk 34
-         versionCode 11
+-        versionCode 11
 -        versionName '3.2'
++        versionCode providers.gradleProperty('launcherVersionCode').getOrElse('11') as int   // DisplayX releases count up
 +        versionName providers.gradleProperty('launcherVersionName').getOrElse('3.2')   // DisplayX builds pass their own
 +        // A public build's own name in the TV's app list (-PlauncherAppLabel=DisplayX); the default keeps "Home".
 +        manifestPlaceholders = [appLabel: providers.gradleProperty('launcherAppLabel').getOrElse('@string/app_name')]
@@ -113,20 +115,22 @@ index 023aecde..9c482317 100644
  
      buildTypes {
 diff --git a/launcher/app/src/main/AndroidManifest.xml b/launcher/app/src/main/AndroidManifest.xml
-index b336792d..17dc9972 100644
+index b336792d..8994e4a9 100644
 --- a/launcher/app/src/main/AndroidManifest.xml
 +++ b/launcher/app/src/main/AndroidManifest.xml
-@@ -8,6 +8,9 @@
+@@ -8,6 +8,11 @@
      <uses-feature android:name="android.hardware.location.gps" android:required="false" />
  
      <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 +    <uses-permission android:name="android.permission.INTERNET" />
 +    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
++    <!-- The wallpapers on Android 8-12, where READ_MEDIA_IMAGES does not exist yet. -->
++    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
 +    <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
      <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
      <!-- Needed since Android 10 to read the Wi-Fi network name for the network pill. Never requested at
           runtime: build-and-install grants it with pm grant, so lint's Android 12 "ask for COARSE with
-@@ -71,7 +74,7 @@
+@@ -71,7 +76,7 @@
      </queries>
  
      <application
@@ -172,10 +176,10 @@ index 4cf0143b..ef7bf641 100644
          return !animations ? 1f : advancedEffects ? 1.12f : 1.10f;
      }
 diff --git a/launcher/app/src/main/java/com/gathin/tvhome/Config.java b/launcher/app/src/main/java/com/gathin/tvhome/Config.java
-index eaccada9..5986d47a 100644
+index eaccada9..4d572ee2 100644
 --- a/launcher/app/src/main/java/com/gathin/tvhome/Config.java
 +++ b/launcher/app/src/main/java/com/gathin/tvhome/Config.java
-@@ -209,6 +209,74 @@ final class Config {
+@@ -209,6 +209,77 @@ final class Config {
      final List<RaceWeekend.Race> raceCalendar;
      /** Cinematic top shelf (config.xml, cinematic_home): the focused dock app's artwork behind a larger shelf. */
      final boolean cinematicHome;
@@ -198,6 +202,9 @@ index eaccada9..5986d47a 100644
 +    boolean gtvHome;
 +    /** gtv_home keeps the shelf's gradient in the highlighted app's colour, with no wallpapers (theme key gtv_app_colour). */
 +    boolean gtvAppColour;
++    /** gtv_home's big soft shadows under the clock and greeting (theme key text_shadows, default on). Some MediaTek GPUs
++     *  draw them as a grey box; off leaves a short light shadow. */
++    boolean textShadows = true;
 +    /** gtv_home says when the highlighted app was last opened (theme key gtv_last_opened). */
 +    boolean gtvLastOpened;
 +    /** The cinematic shelf's "Last opened" line under the app's name (theme key last_opened). */
@@ -250,7 +257,7 @@ index eaccada9..5986d47a 100644
      /** The glow in the focused app's colour behind the dock (config.xml, ambient_glow); false keeps the background plain. */
      final boolean ambientGlow;
      /** The focus highlight in the focused app's colour on every tile (config.xml, app_glow), as cinematic_home does for the dock. */
-@@ -674,7 +742,7 @@ final class Config {
+@@ -674,7 +745,7 @@ final class Config {
          Festival festival = json == null ? Festival.NONE : Festival.parse(festivalName(json),
                  string(json, "festival_until", ""), string(json, "greeting", ""), string(json, "accent_color", ""));
  
@@ -259,7 +266,7 @@ index eaccada9..5986d47a 100644
                  packageMap(appBanners), panelService, panelAction, panelExtra, coocaaSources, inputAction, inputSources, inputUriScheme, Math.max(1, columns),
                  Math.max(0, rowsBelow), animations, advancedEffects, shamsi, greetingName, moduleCards, reducedMotion, bootToLiveTv,
                  openOnStartChoice, dockTitle, dockRow, topMenu, launcherSettingsButton, reorderButton, showNetworkPill, showInputsPill,
-@@ -689,6 +757,38 @@ final class Config {
+@@ -689,6 +760,39 @@ final class Config {
                  Math.max(0, Math.min(90, clockWallpaperDim)), clockGlow, glassStyle, singleRow && dockRow, dockBandAll, lunar, lunarOffset,
                  dateBelowClock, vpnPill, locale, powerOnHomeAlways, inputsConnectedOnly,
                  Math.max(0, Math.min(600, openOnStartNetworkWait)), iconOnlyVpn);
@@ -271,6 +278,7 @@ index eaccada9..5986d47a 100644
 +        cfg.watchPanel = json != null && bool(json, "watch_panel", false);
 +        cfg.gtvHome = json != null && bool(json, "gtv_home", false);
 +        cfg.gtvAppColour = json != null && bool(json, "gtv_app_colour", false);
++        cfg.textShadows = json == null || bool(json, "text_shadows", true);
 +        cfg.gtvLastOpened = json != null && bool(json, "gtv_last_opened", false);
 +        cfg.lastOpened = json == null || bool(json, "last_opened", true);
 +        cfg.greetingQuirks = json != null && bool(json, "greeting_quirks", false);
@@ -469,10 +477,10 @@ index 00000000..74135eee
 +}
 diff --git a/launcher/app/src/main/java/com/gathin/tvhome/GtvHome.java b/launcher/app/src/main/java/com/gathin/tvhome/GtvHome.java
 new file mode 100644
-index 00000000..434121fe
+index 00000000..d589720b
 --- /dev/null
 +++ b/launcher/app/src/main/java/com/gathin/tvhome/GtvHome.java
-@@ -0,0 +1,1502 @@
+@@ -0,0 +1,1517 @@
 +package com.gathin.tvhome;
 +
 +import android.animation.ArgbEvaluator;
@@ -832,7 +840,7 @@ index 00000000..434121fe
 +        welcome = label(20, Color.WHITE);
 +        welcome.setTypeface(semibold(act.getResources().getFont(R.font.inter)));
 +        welcome.setGravity(Gravity.END);
-+        welcome.setSingleLine(true);
++        welcome.setMaxLines(2);   // a long name goes to a second line (newWelcome)
 +        time.addView(welcome, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 +        TextClock big = clock(96, Color.WHITE);
 +        bigClock = big;
@@ -846,7 +854,8 @@ index 00000000..434121fe
 +                if (glassPicture != null && (l != ol || t != ot)) glassClock(glassPicture);
 +            });
 +        } else if (!cfg.gtvAppColour) {
-+            big.setShadowLayer(dp(14), 0, 0, 0xF0000000);
++            if (cfg.textShadows) big.setShadowLayer(dp(14), 0, 0, 0xF0000000);
++            else big.setShadowLayer(dp(5), 0, dp(1), 0x99000000);
 +        }
 +        LinearLayout.LayoutParams bigLp = wrap();
 +        bigLp.topMargin = -dp(12);
@@ -855,7 +864,8 @@ index 00000000..434121fe
 +            clockBacking.setIncludeFontPadding(false);
 +            clockBacking.setTypeface(big.getTypeface());
 +            clockBacking.setTextSize(TypedValue.COMPLEX_UNIT_SP, 124);
-+            clockBacking.setShadowLayer(dp(18), 0, dp(2), 0xF2000000);
++            if (cfg.textShadows) clockBacking.setShadowLayer(dp(18), 0, dp(2), 0xF2000000);
++            else clockBacking.setShadowLayer(dp(4), 0, dp(1), 0x99000000);
 +            clockBacking.setVisibility(View.INVISIBLE);
 +            clockBacking.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
 +            FrameLayout stack = new FrameLayout(act);
@@ -1099,7 +1109,13 @@ index 00000000..434121fe
 +            welcome.setText("DisplayX " + update + " is out. Run the installer to update.");
 +            return;
 +        }
-+        welcome.setText(welcomeLine(HomeWeather.cached(act), cfg.greetingName, random));
++        String line = welcomeLine(HomeWeather.cached(act), cfg.greetingName, random);
++        welcome.setText(nameOnSecondLine(line, cfg.greetingName));
++    }
++
++    /** A long name ("Sam, Alex and Kai") makes one very wide line over the photo: it goes under the greeting. */
++    static String nameOnSecondLine(String line, String name) {
++        return name.length() > 12 ? line.replace(", " + name, ",\n" + name) : line;
 +    }
 +
 +    /** Nearly half the time the weather speaks if there is any, then the hour, then the everyday lines. With no name
@@ -1135,7 +1151,10 @@ index 00000000..434121fe
 +        t.setTextColor(color);
 +        t.setTypeface(act.getResources().getFont(R.font.inter));
 +        t.setIncludeFontPadding(false);
-+        if (!cfg.gtvAppColour) t.setShadowLayer(dp(11), 0, 0, 0xF0000000);
++        if (!cfg.gtvAppColour) {
++            if (cfg.textShadows) t.setShadowLayer(dp(11), 0, 0, 0xF0000000);
++            else t.setShadowLayer(dp(4), 0, dp(1), 0x99000000);
++        }
 +        return t;
 +    }
 +
@@ -1634,12 +1653,16 @@ index 00000000..434121fe
 +    private Bitmap nextWallpaper() {
 +        List<Long> ids = new ArrayList<>();
 +        String[] columns = {MediaStore.Images.Media._ID};
-+        String[] folder = {WALL_FOLDER + "%"};
++        // RELATIVE_PATH exists from Android 10; Android 8 and 9 only have the file path.
++        boolean relative = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
++        String[] folder = {relative ? WALL_FOLDER + "%" : "%/" + WALL_FOLDER + "%"};
++        @SuppressWarnings("deprecation") String where = (relative ? MediaStore.Images.Media.RELATIVE_PATH
++                : MediaStore.Images.Media.DATA) + " LIKE ?";
 +        try (Cursor c = act.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, columns,
-+                MediaStore.Images.Media.RELATIVE_PATH + " LIKE ?", folder, null)) {
++                where, folder, null)) {
 +            while (c != null && c.moveToNext()) ids.add(c.getLong(0));
 +        } catch (RuntimeException noAccess) {
-+            return null;   // READ_MEDIA_IMAGES not granted
++            return null;   // READ_MEDIA_IMAGES (13+) or READ_EXTERNAL_STORAGE (8-12) not granted
 +        }
 +        SharedPreferences prefs = act.getSharedPreferences("wallpaper_balance", Context.MODE_PRIVATE);
 +        // The counts outlive Home being closed for memory, but start again from 0 when the TV itself restarts.
@@ -15831,6 +15854,32 @@ index adbb30db..15efebc4 100644
      <string name="font_regular" translatable="false">@font/outfit_regular</string>
      <string name="font_light" translatable="false">@font/outfit_light</string>
      <string name="font_extralight" translatable="false">@font/outfit_extralight</string>
+diff --git a/launcher/app/src/test/java/com/gathin/tvhome/GreetingNameLineTest.java b/launcher/app/src/test/java/com/gathin/tvhome/GreetingNameLineTest.java
+new file mode 100644
+index 00000000..3856284a
+--- /dev/null
++++ b/launcher/app/src/test/java/com/gathin/tvhome/GreetingNameLineTest.java
+@@ -0,0 +1,20 @@
++package com.gathin.tvhome;
++
++import static org.junit.Assert.assertEquals;
++
++import org.junit.Test;
++
++public class GreetingNameLineTest {
++
++    @Test
++    public void aLongNameGoesUnderTheGreeting() {
++        assertEquals("Work's done,\nSam, Alex and Kai. Probably.",
++                GtvHome.nameOnSecondLine("Work's done, Sam, Alex and Kai. Probably.", "Sam, Alex and Kai"));
++    }
++
++    @Test
++    public void aShortNameOrNoNameStaysOnOneLine() {
++        assertEquals("Good evening, Alex.", GtvHome.nameOnSecondLine("Good evening, Alex.", "Alex"));
++        assertEquals("Tomorrow can wait.", GtvHome.nameOnSecondLine("Tomorrow can wait.", ""));
++    }
++}
 diff --git a/launcher/app/src/test/java/com/gathin/tvhome/UpdateNoticeTest.java b/launcher/app/src/test/java/com/gathin/tvhome/UpdateNoticeTest.java
 new file mode 100644
 index 00000000..47a7c31d

@@ -127,7 +127,7 @@ if (-not $UpdateNotice) {
 # 5. Install.
 Step 'Installing'
 & $Adb -s $Tv install -r $apk | Out-Null
-Sh "pm grant $Package android.permission.READ_TV_LISTINGS; pm grant $Package android.permission.READ_MEDIA_IMAGES"
+Sh "pm grant $Package android.permission.READ_TV_LISTINGS; pm grant $Package android.permission.READ_MEDIA_IMAGES 2>/dev/null; pm grant $Package android.permission.READ_EXTERNAL_STORAGE 2>/dev/null; true"   # photos: 13+ / 8-12
 Sh "am start -W -n $Package/$cls.MainActivity" | Out-Null
 
 # 6. Wallpapers into the TV's Pictures/TV_Wallpapers.
