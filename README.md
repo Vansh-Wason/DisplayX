@@ -72,6 +72,18 @@ each showing what it costs. Press Enter four times and nothing extra goes online
 
 <sub>Same Google TV 14 emulator, same apps. On real TVs DisplayX measured 43 MB (1.8 GB Haier), 63–84 MB (2.4 GB TCL) and 79–99 MB (2 GB OnePlus 55Q1, Android 11, in a user's field test).</sub>
 
+## ▣ Tested on
+
+| Brand | Model | Year | Chip | RAM | OS | DisplayX | Home memory | Result |
+|---|---|---|---|---|---|---|---|---|
+| TCL | 55Q6C (55", India) | – | MediaTek | 2.4 GB | Google TV 14, patch Dec 2025 | v1.1 | 63–84 MB | ✓ Daily use, all effects on |
+| Haier | MatrixTV DE | – | MediaTek MT9676 | 1.8 GB | Google TV 14, patch Dec 2025 | v1.0 | 43–68 MB | ✓ Daily use, photo slideshow |
+| OnePlus | 55Q1 (55") | 2019 | MediaTek | 2 GB | Android TV 11 | v1.0 | 79–99 MB | ✓ Field test by a user; needed `"text_shadows": false` |
+| Emulator | Google TV 14 (x86) | – | – | 2 GB | Google TV 14 | v1.1 | 62–65 MB | ✓ 10,000 random key presses, no crash |
+| Emulator | Android TV 8 (x86) | – | – | 2 GB | Android TV 8 | v1.1 | – | ✓ Runs, wallpapers load |
+
+<sub>Tried it on another TV? Open an issue with the brand, model, year, Android version and what worked, and it goes in this table.</sub>
+
 ## ✓ Safe by design
 
 ✓ **No account, no ads, no tracking.** It goes online only for poster images and, if you ask, the weather.<br>
